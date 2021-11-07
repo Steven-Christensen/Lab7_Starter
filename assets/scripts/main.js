@@ -1,6 +1,6 @@
 // main.js
 
-import { Router } from './router.js';
+import { Router } from './Router.js';
 
 const recipes = [
   'https://introweb.tech/assets/json/ghostCookies.json',
@@ -25,6 +25,8 @@ const router = new Router(function () {
    * This will only be two single lines
    * If you did this right, you should see the recipe cards just like last lab
    */
+   document.querySelector('.section--recipe-cards').classList.add('shown')
+   document.querySelector('.section--recipe-expand').classList.remove('shown')
 });
 
 window.addEventListener('DOMContentLoaded', init);
@@ -55,6 +57,17 @@ function initializeServiceWorker() {
    *  TODO - Part 2 Step 1
    *  Initialize the service worker set up in sw.js
    */
+   if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').then(function(registration) {
+        // Registration was successful
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        // registration failed :(
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
 }
 
 /**
@@ -88,27 +101,36 @@ async function fetchRecipes() {
  * appends them to the page
  */
 function createRecipeCards() {
-  // Makes a new recipe card
-  const recipeCard = document.createElement('recipe-card');
-  // Inputs the data for the card. This is just the first recipe in the recipes array,
-  // being used as the key for the recipeData object
-  recipeCard.data = recipeData[recipes[0]];
+  for(let i = 0; i < recipes.length; i++)
+  {
+    // Makes a new recipe card
+    const recipeCard = document.createElement('recipe-card');
+    // Inputs the data for the card. This is just the first recipe in the recipes array,
+    // being used as the key for the recipeData object
+    recipeCard.data = recipeData[recipes[i]];
 
-  // This gets the page name of each of the arrays - which is basically
-  // just the filename minus the .json. Since this is the first element
-  // in our recipes array, the ghostCookies URL, we will receive the .json
-  // for that ghostCookies URL since it's a key in the recipeData object, and
-  // then we'll grab the 'page-name' from it - in this case it will be 'ghostCookies'
-  const page = recipeData[recipes[0]]['page-name'];
-  router.addPage(page, function() {
-    document.querySelector('.section--recipe-cards').classList.remove('shown');
-    document.querySelector('.section--recipe-expand').classList.add('shown');
-    document.querySelector('recipe-expand').data = recipeData[recipes[0]];
-  });
-  bindRecipeCard(recipeCard, page);
-
-  document.querySelector('.recipe-cards--wrapper').appendChild(recipeCard);
-
+    // This gets the page name of each of the arrays - which is basically
+    // just the filename minus the .json. Since this is the first element
+    // in our recipes array, the ghostCookies URL, we will receive the .json
+    // for that ghostCookies URL since it's a key in the recipeData object, and
+    // then we'll grab the 'page-name' from it - in this case it will be 'ghostCookies'
+    const page = recipeData[recipes[i]]['page-name'];
+    
+    router.addPage(page, function() {
+      
+      document.querySelector('.section--recipe-cards').classList.remove('shown');
+      document.querySelector('.section--recipe-expand').classList.add('shown');
+      document.querySelector('recipe-expand').data = recipeData[recipes[i]];
+    });
+    
+    bindRecipeCard(recipeCard, page);
+    
+    document.querySelector('.recipe-cards--wrapper').appendChild(recipeCard);
+    
+    if( i >= 3){
+        recipeCard.classList.add('hidden');
+      }
+  }
   /**
    * TODO - Part 1 - Step 3
    * Above I made an example card and added a route for the recipe at index 0 in
@@ -117,6 +139,7 @@ function createRecipeCards() {
    * all the recipes. (bonus - add the class 'hidden' to every recipe card with 
    * an index greater  than 2 in your for loop to make show more button functional)
    */
+
 }
 
 /**
@@ -172,6 +195,14 @@ function bindEscKey() {
    * if the escape key is pressed, use your router to navigate() to the 'home'
    * page. This will let us go back to the home page from the detailed page.
    */
+  document.addEventListener('keydown', function(e){
+    if(e.key === "Escape") {
+      console.log('Escape key pressed')
+      router.navigate('home', false)
+  }
+  })
+
+
 }
 
 /**
@@ -193,4 +224,12 @@ function bindPopstate() {
    * so your navigate() function does not add your going back action to the history,
    * creating an infinite loop
    */
+  window.addEventListener('popstate', function(event){
+    if(!event.state){
+      router.navigate('home', true)
+    }
+    else{
+      router.navigate(event.state.page, true)
+    }
+  })
 }
